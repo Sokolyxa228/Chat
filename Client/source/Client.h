@@ -1,0 +1,86 @@
+#pragma once
+
+#include "imgui.h"
+#include "imgui-SFML.h"
+#include <thread>
+#include <SFML/Graphics.hpp>
+#include <SFML/Network.hpp>
+#include <SFML/System.hpp>
+#include <SFML/Window.hpp>
+#include <fstream>
+
+struct UserData {
+	std::string clientname;
+	std::string clientpassword;
+
+	bool checking_password;
+	bool service_information;
+
+	std::string message_to_another_client;
+	std::string to_client_name;
+
+	std::string message_from_another_client;
+	std::string from_client_name;
+};
+
+
+
+
+
+
+class Client
+{
+
+private:
+	/*-------------Start up Members----------------------*/
+	sf::VideoMode video_mode_;
+	sf::RenderWindow* window_;
+	sf::Event sfml_evnt_;
+	sf::Clock delta_clock;
+
+	/*Input window*/
+	char name_[100];
+	char password_[100];
+	char another_name_[100];
+	char message_[100];
+	bool greeting_flag_;
+	bool checking_password_;
+
+	/*Work with sockets*/
+	sf::TcpSocket socket_;
+	sf::Packet last_packet_;
+
+
+
+private:
+	/*-------------Start up Functions----------------------*/
+	void InitSFMLWindow();
+	void InitImGui();
+	void PollEvents();
+	bool Running() const;
+	void Update();
+	void Render();
+	//For all ImGui windows
+	void RenderImGui();
+	void RunSFML();
+	
+
+	/*----------------ImGui Windows-----------------------*/
+
+	void GreetingWindow();
+	void LoginWindow();
+	void CommunicationWindow();
+	void PrintToConsole(UserData & data);
+
+	/*With socket*/
+	void ConnectToServer(const char* ip_adress, unsigned short port);
+	void SendPacketToServer(sf::Packet& packet);
+	void ReceiveLoginInformation();
+	void ReceiveMessage();
+
+public:
+	Client();
+	void Run();
+	~Client();
+};
+
