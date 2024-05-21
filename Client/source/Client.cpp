@@ -11,7 +11,7 @@ sf::Packet& operator<<(sf::Packet& inp, const UserData& msg)
 
 sf::Packet& operator>>(sf::Packet& out,UserData& msg)
 {
-	out >> msg.checking_password >> msg.message_from_another_client >> msg.from_client_name;
+	out >> msg.checking_password >> msg.message_from_another_client >> msg.from_client_name >> msg.error;
 	
 	return out;
 }
@@ -69,6 +69,7 @@ Client::Client(): greeting_flag_(true), checking_password_(false)
 {
 	name_[0] = '\0';
 	password_[0] = '\0';
+	error_code_ = 0;
 	ConnectToServer("127.0.0.1", 3000);
 	InitSFMLWindow();
 	InitImGui();
@@ -153,7 +154,6 @@ void Client::LoginWindow()
 {
 	ImGui::SetNextWindowSize(ImVec2(1200, 800));
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-
 	if (ImGui::Begin("Input Block", nullptr, ImGuiWindowFlags_NoTitleBar  | ImGuiWindowFlags_NoCollapse)) {
 		ImGui::SetWindowFontScale(2);
 		//auto& style = ImGui::GetStyle();
@@ -176,18 +176,23 @@ void Client::LoginWindow()
 				packet << mes;
 				std::cout << "My name is " << name_ << '\n';
 				SendPacketToServer(packet);
-				std::thread new_thred(&Client::ReceiveLoginInformation,this);
-				new_thred.join();
+				
+
 
 
 			}
 		}
-		
+		if (error_code_ == 1) {
+
+			ImGui::Text("Invalid username or password");
+			
+			
+		}
 
 		
 	}
-	//std:cout << name_ << password_ << "\n";
 	ImGui::End();
+
 }
 
 void Client::CommunicationWindow()
@@ -195,8 +200,9 @@ void Client::CommunicationWindow()
 
 	ImGui::SetNextWindowSize(ImVec2(1200, 800));
 	ImGui::SetNextWindowPos(ImVec2(0, 0));
-	if (ImGui::Begin("Communication", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse)) {
+	if (ImGui::Begin(name_, nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize)) {
 		ImGui::SetWindowFontScale(2);
+
 		ImGui::Text("Send message to: ");
 		ImGui::InputText("##clossed", another_name_, 100);
 
@@ -214,10 +220,17 @@ void Client::CommunicationWindow()
 			packet << mes;
 			SendPacketToServer(packet);
 		}
+		if (error_code_ == 2) {
+			std::string print_inf = name_message_for_me_ + ":" + message_for_me_;
+			const char* new_mes = print_inf.c_str();
+			ImGui::Text(new_mes);
+		}
 
 
 
 	}ImGui::End();
+
+	
 }
 
 
@@ -245,38 +258,30 @@ void Client::SendPacketToServer(sf::Packet& packet)
 	}
 }
 
-void Client::ReceiveLoginInformation()
-{
-	sf::Packet packet_from_server;
-	while (!(packet_from_server.getDataSize() > 0)) {
-		sf::Socket::Status st = socket_.receive(packet_from_server);
-		if (packet_from_server.getDataSize() > 0) {
-			UserData information;
-			packet_from_server >> information;
-			if (information.checking_password) {
-				
-				PrintToConsole(information);
-				checking_password_ = true;
-			}
-		}
-	}
-
-	
-}
-
 void Client::ReceiveMessage()
 {
 	sf::Packet packet_from;
-	std::cout << "wait..." << '\n';
+
 	while (true) {
+		sf::Socket::Status recived_status = socket_.receive(packet_from);
 		if (checking_password_) {
-			sf::Socket::Status recived_status = socket_.receive(packet_from);
+
 
 			if (packet_from.getDataSize() > 0) {
 				UserData new_sms;
 				packet_from >> new_sms;
+				CheckNewMessage(new_sms);
 				PrintToConsole(new_sms);
 			}
+		}
+		else {
+			if (packet_from.getDataSize() > 0) {
+				UserData new_sms;
+				packet_from >> new_sms;
+				CheckPassword(new_sms);
+
+			}
+
 		}
 	}
 }
@@ -284,9 +289,29 @@ void Client::ReceiveMessage()
 void Client::PrintToConsole(UserData & data)
 {
 
-	std::cout << "!!!!!!:" << data.message_from_another_client << ' ' << data.from_client_name
+	std::cout << "!!!!!!: " << data.message_from_another_client << ' ' << data.from_client_name
 		<< " " << data.checking_password  << '\n';
+	std::cout << "Error code " << data.error << '\n';
 
+}
+
+void Client::CheckPassword(UserData& data)
+{
+	if (data.checking_password) {
+
+		PrintToConsole(data);
+		checking_password_ = true;
+	}
+	error_code_ = data.error;
+}
+
+void Client::CheckNewMessage(UserData& data)
+{
+	error_code_ = data.error;
+	if (error_code_ == 2) {
+		message_for_me_ = data.message_from_another_client;
+		name_message_for_me_ = data.from_client_name;
+	}
 }
 
 

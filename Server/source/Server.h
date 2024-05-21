@@ -15,6 +15,7 @@ struct ClientData {
 	bool service_information;
 	std::string message;
 	std::string to_another_client;
+	int error;
 };
 
 class Server

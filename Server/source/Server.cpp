@@ -4,7 +4,7 @@
 
 sf::Packet& operator<<(sf::Packet& inp, const ClientData& msg)
 {
-	inp << msg.checking_password << msg.message << msg.to_another_client;
+	inp << msg.checking_password << msg.message << msg.clientname << msg.error;
 	return inp;
 }
 
@@ -50,7 +50,6 @@ void Server::AcceptClient()
 void Server::ReceiveClientInformation()
 {
 	while (true) {
-		//std::cout << clients_list_.size() << '\n';
 		for (int i = 0; i < clients_list_.size();++i) {
 			sf::Packet packet_from;
 			sf::Socket::Status recived_status = (clients_list_[i]->socket).receive(packet_from);
@@ -93,11 +92,13 @@ void Server::WorkWithLogin(ClientData& user)
 		if (check_name == user.clientname && check_password == user.clientpassword) {
 			record_base = false;
 			user.checking_password = true;
+			user.error = 0;
 			break;
 		}
 		else if ((check_name == user.clientname && check_password != user.clientpassword)) {
 			std::cout << "Entrance error\n";
 			record_base = false;
+			user.error = 1;
 			break;
 		}
 	}
@@ -133,16 +134,21 @@ void Server::SendToClient(ClientData& user)
 		}
 	}
 	else {
+
 		for (int i = 0; i < clients_list_.size(); ++i) {
 			if ((user.to_another_client == clients_list_[i]->clientname) && (clients_list_[i]->online) && clients_list_[i]->checking_password) {
+				user.error = 2;
 				packet << user;
-				if (clients_list_[i]->socket.send(packet) != sf::Socket::Done) {
-						std::cout << "Could not send packet\n";
-				}
-				else {
+				if (clients_list_[i]->socket.send(packet) == sf::Socket::Done) {
 					std::cout << "Server: I sent the packet to client " << clients_list_[i]->clientname << '\n';
+					return;
 				}
 			}
+		}
+		user.error = 3;
+		packet << user;
+		if (user.socket.send(packet) == sf::Socket::Done) {
+			std::cout << "I send error num = 2\n";
 		}
 	}
 	

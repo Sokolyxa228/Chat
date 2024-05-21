@@ -9,6 +9,7 @@
 #include <SFML/Window.hpp>
 #include <fstream>
 
+
 struct UserData {
 	std::string clientname;
 	std::string clientpassword;
@@ -21,6 +22,7 @@ struct UserData {
 
 	std::string message_from_another_client;
 	std::string from_client_name;
+	int error;
 };
 
 
@@ -45,6 +47,9 @@ private:
 	char message_[100];
 	bool greeting_flag_;
 	bool checking_password_;
+	int error_code_;
+	std::string message_for_me_;
+	std::string name_message_for_me_;
 
 	/*Work with sockets*/
 	sf::TcpSocket socket_;
@@ -71,11 +76,12 @@ private:
 	void LoginWindow();
 	void CommunicationWindow();
 	void PrintToConsole(UserData & data);
+	void CheckPassword(UserData& data);
+	void CheckNewMessage(UserData& data);
 
 	/*With socket*/
 	void ConnectToServer(const char* ip_adress, unsigned short port);
 	void SendPacketToServer(sf::Packet& packet);
-	void ReceiveLoginInformation();
 	void ReceiveMessage();
 
 public:
