@@ -11,7 +11,7 @@ sf::Packet& operator<<(sf::Packet& inp, const UserData& msg)
 
 sf::Packet& operator>>(sf::Packet& out,UserData& msg)
 {
-	out >> msg.checking_password >> msg.message_from_another_client >> msg.from_client_name >> msg.error;
+	out >> msg.checking_password >> msg.message_from_another_client >> msg.from_client_name >> msg.error >> msg.to_client_name;
 	
 	return out;
 }
@@ -65,12 +65,10 @@ void Client::Run() {
 }
 
 
-Client::Client(): greeting_flag_(true), checking_password_(false)
+Client::Client() : greeting_flag_(true), checking_password_(false), error_code_(0), sending_yourself_(false), choosen_name_chat_(""), selected(-1)
 {
 	name_[0] = '\0';
 	password_[0] = '\0';
-	error_code_ = 0;
-	ConnectToServer("127.0.0.1", 3000);
 	InitSFMLWindow();
 	InitImGui();
 }
@@ -80,8 +78,6 @@ Client::~Client()
 	socket_.disconnect();
 
 }
-
-
 
 
 
@@ -117,8 +113,6 @@ void Client::RenderImGui()
 
 
 
-
-
 void Client::Render()
 {
 	RenderImGui();
@@ -145,6 +139,7 @@ void Client::GreetingWindow() {
 		ImGui::SetCursorPos(ImVec2(470, 280));
 		if (ImGui::Button("Start", ImVec2(250, 120))) {
 			greeting_flag_ = false;
+			ConnectToServer("127.0.0.1", 3000);
 		}
 	}ImGui::End();
 }
@@ -183,9 +178,9 @@ void Client::LoginWindow()
 			}
 		}
 		if (error_code_ == 1) {
-
+			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
 			ImGui::Text("Invalid username or password");
-			
+			ImGui::PopStyleColor();
 			
 		}
 
@@ -208,31 +203,102 @@ void Client::CommunicationWindow()
 
 		ImGui::Text("Your message: ");
 		ImGui::InputText("##clossed2", message_, 100);
+
 		if (ImGui::Button("Send", ImVec2(200, 100))) {
-			UserData mes;
-			mes.clientname = name_;
-			mes.clientpassword = password_;
-			mes.checking_password = true;
-			mes.service_information = false;
-			mes.message_to_another_client = message_;
-			mes.to_client_name = another_name_;
-			sf::Packet packet;
-			packet << mes;
-			SendPacketToServer(packet);
+			if (std::string(another_name_,sizeof(another_name_)) == std::string(name_, sizeof(name_))) {
+				sending_yourself_ = true;
+			}
+			else {
+				sending_yourself_ = false;
+				UserData mes;
+				mes.clientname = name_;
+				mes.clientpassword = password_;
+				mes.checking_password = true;
+				mes.service_information = false;
+				mes.message_to_another_client = message_;
+				mes.to_client_name = another_name_;
+				sf::Packet packet;
+				packet << mes;
+				SendPacketToServer(packet);
+			}
 		}
-		if (error_code_ == 2) {
-			std::string print_inf = name_message_for_me_ + ":" + message_for_me_;
-			const char* new_mes = print_inf.c_str();
-			ImGui::Text(new_mes);
+		SelectChatMenu();
+		if (sending_yourself_) {
+			ImGui::SetCursorPos(ImVec2(300, 200));
+			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+			ImGui::Text("You can not send message to yourself!");
+			ImGui::PopStyleColor();
 		}
-		else if (error_code_ == 3) {
+		
+	
+		if (error_code_ == 3) {
+			ImGui::SetCursorPos(ImVec2(300, 200));
+			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
 			ImGui::Text("User was not found");
+			ImGui::PopStyleColor();
+			
 		}
 
 
 
 	}ImGui::End();
 
+	
+}
+
+void Client::SelectChatMenu()
+{
+	
+	if (ImGui::TreeNode("All chats:"))
+	{
+		int n = 1;
+		
+		for (std::string name: list_clients_names_)
+		{
+			const char* name_for_print= name.c_str();
+			
+			if (ImGui::Selectable(name_for_print, selected == n)) {
+				selected = n;
+				choosen_name_chat_ = name;
+			}
+				
+				
+			n++;
+		}
+		if (choosen_name_chat_ != "") {
+			HistoryMessages();
+		}
+		ImGui::TreePop();
+	}
+	
+
+}
+
+void Client::HistoryMessages()
+{
+	
+	ImGui::SetNextWindowSize(ImVec2(600, 600));
+	if (ImGui::Begin("##Chat with", nullptr, ImGuiWindowFlags_NoResize)) {
+		ImGui::SetWindowFontScale(2.5);
+		for (auto element : list_messages_) {
+			std::string first = element.first;
+			std::string second = element.second;
+			std::string subfirst = first.substr(1);
+			if (first == choosen_name_chat_) {
+				std::string print_inf = first + ": " + second;
+				//std::cout << print_inf << '\n';
+				const char* new_mes = print_inf.c_str();
+				ImGui::Text(new_mes);
+			}
+			else if (subfirst == choosen_name_chat_) {
+				//std::cout << first << ' ' << second << '\n';
+				std::string print_inf = "me: " + second;
+				//std::cout << print_inf << '\n';
+				const char* new_mes = print_inf.c_str();
+				ImGui::Text(new_mes);
+			}
+		}
+	} ImGui::End();
 	
 }
 
@@ -274,7 +340,7 @@ void Client::ReceiveMessage()
 				UserData new_sms;
 				packet_from >> new_sms;
 				CheckNewMessage(new_sms);
-				PrintToConsole(new_sms);
+				//PrintToConsole(new_sms);
 			}
 		}
 		else {
@@ -314,6 +380,14 @@ void Client::CheckNewMessage(UserData& data)
 	if (error_code_ == 2) {
 		message_for_me_ = data.message_from_another_client;
 		name_message_for_me_ = data.from_client_name;
+		list_messages_.push_back(std::make_pair(name_message_for_me_, message_for_me_));
+		list_clients_names_.insert(name_message_for_me_);
+	}
+	else if (error_code_ == 4) {
+		std::string mes = data.message_from_another_client;
+		std::string new_name = data.to_client_name;
+		list_messages_.push_back(std::make_pair("@"+new_name, mes));
+		list_clients_names_.insert(another_name_);
 	}
 }
 

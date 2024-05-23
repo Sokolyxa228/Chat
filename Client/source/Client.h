@@ -5,6 +5,7 @@
 #include <thread>
 #include <map>
 #include <vector>
+#include <set>
 #include <utility>
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
@@ -55,9 +56,11 @@ private:
 	int error_code_;
 	std::string message_for_me_;
 	std::string name_message_for_me_;
-	std::vector<std::string> list_clients_names;
-	std::map<std::string, std::string> list_messages_;
-
+	std::set<std::string> list_clients_names_;
+	std::vector < std::pair<std::string, std::string>> list_messages_;
+	std::string choosen_name_chat_;
+	bool sending_yourself_;
+	int selected;
 	/*Work with sockets*/
 	sf::TcpSocket socket_;
 	sf::Packet last_packet_;
@@ -83,7 +86,8 @@ private:
 	void GreetingWindow();
 	void LoginWindow();
 	void CommunicationWindow();
-
+	void SelectChatMenu();
+	void HistoryMessages();
 
 	/*With socket*/
 	void ConnectToServer(const char* ip_adress, unsigned short port);

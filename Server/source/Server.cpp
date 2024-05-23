@@ -4,7 +4,7 @@
 
 sf::Packet& operator<<(sf::Packet& inp, const ClientData& msg)
 {
-	inp << msg.checking_password << msg.message << msg.clientname << msg.error;
+	inp << msg.checking_password << msg.message << msg.clientname << msg.error << msg.to_another_client;
 	return inp;
 }
 
@@ -137,6 +137,13 @@ void Server::SendToClient(ClientData& user)
 
 		for (int i = 0; i < clients_list_.size(); ++i) {
 			if ((user.to_another_client == clients_list_[i]->clientname) && (clients_list_[i]->online) && clients_list_[i]->checking_password) {
+				
+				user.error = 4;
+				packet << user;
+				sf::Socket::Status status_sending = user.socket.send(packet);
+			
+				packet.clear();
+				
 				user.error = 2;
 				packet << user;
 				if (clients_list_[i]->socket.send(packet) == sf::Socket::Done) {

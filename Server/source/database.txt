@@ -1,13 +1,4 @@
-
 Max 123
-dsf ssffs
-ddd ddd
-ww w
-a a
-q e
-trtr d
-Oleg 23
-Pete 1
-Nastya 11
-Anton 321
 Ivan 123
+Peten 321
+Anton 123
