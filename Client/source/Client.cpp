@@ -225,6 +225,9 @@ void Client::CommunicationWindow()
 			const char* new_mes = print_inf.c_str();
 			ImGui::Text(new_mes);
 		}
+		else if (error_code_ == 3) {
+			ImGui::Text("User was not found");
+		}
 
 
 

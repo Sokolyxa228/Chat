@@ -3,6 +3,9 @@
 #include "imgui.h"
 #include "imgui-SFML.h"
 #include <thread>
+#include <map>
+#include <vector>
+#include <utility>
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <SFML/System.hpp>
@@ -43,13 +46,17 @@ private:
 	/*Input window*/
 	char name_[100];
 	char password_[100];
-	char another_name_[100];
-	char message_[100];
 	bool greeting_flag_;
 	bool checking_password_;
+
+	/*Send message window*/
+	char another_name_[100];
+	char message_[100];
 	int error_code_;
 	std::string message_for_me_;
 	std::string name_message_for_me_;
+	std::vector<std::string> list_clients_names;
+	std::map<std::string, std::string> list_messages_;
 
 	/*Work with sockets*/
 	sf::TcpSocket socket_;
@@ -65,6 +72,7 @@ private:
 	bool Running() const;
 	void Update();
 	void Render();
+
 	//For all ImGui windows
 	void RenderImGui();
 	void RunSFML();
@@ -75,14 +83,17 @@ private:
 	void GreetingWindow();
 	void LoginWindow();
 	void CommunicationWindow();
-	void PrintToConsole(UserData & data);
-	void CheckPassword(UserData& data);
-	void CheckNewMessage(UserData& data);
+
 
 	/*With socket*/
 	void ConnectToServer(const char* ip_adress, unsigned short port);
 	void SendPacketToServer(sf::Packet& packet);
 	void ReceiveMessage();
+
+	/*Domestic comutations*/
+	void PrintToConsole(UserData& data);
+	void CheckPassword(UserData& data);
+	void CheckNewMessage(UserData& data);
 
 public:
 	Client();
