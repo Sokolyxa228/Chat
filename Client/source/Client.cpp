@@ -12,7 +12,6 @@ sf::Packet& operator<<(sf::Packet& inp, const UserData& msg)
 sf::Packet& operator>>(sf::Packet& out,UserData& msg)
 {
 	out >> msg.checking_password >> msg.message_from_another_client >> msg.from_client_name >> msg.error >> msg.to_client_name;
-	
 	return out;
 }
 
@@ -69,6 +68,8 @@ Client::Client() : greeting_flag_(true), checking_password_(false), error_code_(
 {
 	name_[0] = '\0';
 	password_[0] = '\0';
+	another_name_[0] = '\0';
+	message_[0] = '\0';
 	InitSFMLWindow();
 	InitImGui();
 }
@@ -236,7 +237,14 @@ void Client::CommunicationWindow()
 			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
 			ImGui::Text("User was not found");
 			ImGui::PopStyleColor();
+
 			
+		}
+		else if (error_code_ == 5) {
+			ImGui::SetCursorPos(ImVec2(300, 200));
+			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+			ImGui::Text("User is not online now");
+			ImGui::PopStyleColor();
 		}
 
 

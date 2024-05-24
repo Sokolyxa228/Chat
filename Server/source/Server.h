@@ -31,6 +31,7 @@ private:
 	void WorkWithLogin(ClientData & user);
 	void SendToClient(ClientData& user);
 	void PrintToConsole();
+	bool CheckOnline(ClientData& user);
 
 public:
 	void Run();

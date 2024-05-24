@@ -152,6 +152,14 @@ void Server::SendToClient(ClientData& user)
 				}
 			}
 		}
+		if (CheckOnline(user)) {
+			user.error = 5;
+			packet << user;
+			if (user.socket.send(packet) == sf::Socket::Done) {
+				std::cout << "I send error num = 5\n";
+			}
+		}
+
 		user.error = 3;
 		packet << user;
 		if (user.socket.send(packet) == sf::Socket::Done) {
@@ -168,6 +176,19 @@ void Server::PrintToConsole()
 			<< " " << clients_list_[i]->checking_password << " " << clients_list_[i]->service_information << ' ' << clients_list_[i]->message
 			<< ' ' << clients_list_[i]->to_another_client << '\n';
 	}
+}
+
+bool Server::CheckOnline(ClientData& user)
+{
+	std::ifstream in("source/database.txt");
+	std::string user_name = "", user_password = "";
+	while (in >> user_name >> user_password) {
+		if (user.to_another_client == user_name) {
+			return true;
+		}
+		
+	}
+	return false;
 }
 
 void Server::Run() {

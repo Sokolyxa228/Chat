@@ -54,6 +54,14 @@ private:
 	char another_name_[100];
 	char message_[100];
 	int error_code_;
+	/* error_code:
+	0 - all good
+	1 - error login
+	2 - success sending
+	3 - user was not found
+	4 - for print "me: ..."
+	5 - user is not online
+	*/
 	std::string message_for_me_;
 	std::string name_message_for_me_;
 	std::set<std::string> list_clients_names_;
